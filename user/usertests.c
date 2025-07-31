@@ -2586,6 +2586,60 @@ badarg(char *s)
   exit(0);
 }
 
+// Came from "ostep-projects"
+void
+getreadcount_simple() {
+  int x1 = getreadcount();
+  int x2 = getreadcount();
+  char buf[100];
+  (void) read(4, buf, 1);
+  int x3 = getreadcount();
+  int i;
+  for (i = 0; i < 1000; i++) {
+    (void) read(4, buf, 1);
+  }
+  int x4 = getreadcount();
+
+  if (x2 - x1 != 0) {
+    exit(1);
+  }
+  if (x3 - x1 != 1) {
+    exit(1);
+  }
+  if (x4 - x3 != 1000) {
+    exit(1);
+  }
+  exit(0);
+}
+
+// Came from "ostep-projects"
+void
+getreadcount_concurrency() {
+  int x1 = getreadcount();
+
+  int rc = fork();
+
+  int total = 0;
+  int i;
+  for (i = 0; i < 100000; i++) {
+    char buf[100];
+    (void) read(4, buf, 1);
+  }
+    // https://wiki.osdev.org/Shutdown
+    // (void) shutdown();
+
+  if (rc > 0) {
+    (void) wait(0);
+    int x2 = getreadcount();
+    total += (x2 - x1);
+    
+    if (total != 200000) {
+      exit(1);
+    }
+  }
+  exit(0);
+}
+
 struct test {
   void (*f)(char *);
   char *s;
@@ -2650,6 +2704,8 @@ struct test {
   {sbrklast, "sbrklast"},
   {sbrk8000, "sbrk8000"},
   {badarg, "badarg" },
+  {getreadcount_simple, "getreadcount_simple"},
+  {getreadcount_concurrency, "getreadcount_concurrency"},
 
   { 0, 0},
 };
